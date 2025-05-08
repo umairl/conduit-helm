@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "conduit.fullname" . }}-config
+  labels:
+    {{- include "conduit.labels" . | nindent 4 }}
+data:
+  conduit.toml: |
+    [global]
+    server_name = "{{ .Values.conduit.serverName }}"
+    database_backend = "{{ .Values.conduit.databaseBackend }}"
+    allow_registration = {{ .Values.conduit.allowRegistration }}
+    allow_federation = {{ .Values.conduit.allowFederation }}
+    allow_guest_access = {{ .Values.conduit.allowGuestAccess }}
+    allow_encryption = {{ .Values.conduit.allowEncryption }}
+    max_request_size = {{ .Values.conduit.maxRequestSize | int }}  # Convert to integer
+    trusted_servers = {{ .Values.conduit.trustedServers | toJson }}
+    port = {{ .Values.conduit.env.CONDUIT_PORT }}
+    address = "{{ .Values.conduit.env.CONDUIT_ADDRESS }}"
+    log = "{{ .Values.conduit.env.CONDUIT_LOG }}"
+    max_concurrent_requests = {{ .Values.conduit.env.CONDUIT_MAX_CONCURRENT_REQUESTS }}
+    max_concurrent_events = {{ .Values.conduit.env.CONDUIT_MAX_CONCURRENT_EVENTS }}
+    database_path = "/var/lib/conduit/conduit.db"

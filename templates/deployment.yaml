@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "conduit.fullname" . }}
+  labels:
+    {{- include "conduit.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "conduit.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "conduit.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: CONDUIT_CONFIG
+              value: "/etc/conduit/conduit.toml"
+            - name: CONDUIT_PORT
+              value: "{{ .Values.conduit.env.CONDUIT_PORT }}"
+          ports:
+            - name: http
+              containerPort: {{ .Values.conduit.env.CONDUIT_PORT }}
+              protocol: TCP
+          volumeMounts:
+            - name: conduit-data
+              mountPath: /var/lib/conduit
+            - name: conduit-config
+              mountPath: /etc/conduit
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /_matrix/client/versions
+              port: {{ .Values.conduit.env.CONDUIT_PORT }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /_matrix/client/versions
+              port: {{ .Values.conduit.env.CONDUIT_PORT }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: conduit-data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "conduit.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: conduit-config
+          configMap:
+            name: {{ include "conduit.fullname" . }}-config

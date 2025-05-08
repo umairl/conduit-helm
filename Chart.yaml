@@ -1,0 +1,7 @@
+apiVersion: v2
+name: conduit
+description: A Helm chart for deploying Conduit
+type: application
+version: 0.1.1
+appVersion: "v0.7.0"
+dependencies: []

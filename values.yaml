@@ -1,0 +1,76 @@
+# Add these at the top
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+image:
+  repository: matrixconduit/matrix-conduit
+  pullPolicy: IfNotPresent
+  tag: "v0.7.0"
+
+service:
+  name: "conduit"  # Explicit service name
+  type: ClusterIP
+  port: 6167
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+  hosts:
+    - host: conduit.edgeinfra.site
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: conduit-tls
+      hosts:
+        - conduit.edgeinfra.site
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+conduit:
+  serverName: edgeinfra.site
+  databaseBackend: sqlite
+  allowRegistration: true
+  allowFederation: true
+  allowGuestAccess: true
+  allowEncryption: true
+  maxRequestSize: 20000000
+  trustedServers:
+    - matrix.org
+  env:
+    CONDUIT_PORT: 6167
+    CONDUIT_ADDRESS: "0.0.0.0"
+    CONDUIT_LOG: "info,warn,error"
+    CONDUIT_MAX_CONCURRENT_REQUESTS: 100
+    CONDUIT_MAX_CONCURRENT_EVENTS: 1000
+  databasePath: "/var/lib/conduit/conduit.db"
+
+postgresql:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+  requests:
+    cpu: "500m"
+    memory: "512Mi"
+
+securityContext:
+  fsGroup: 1000
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "6167"
